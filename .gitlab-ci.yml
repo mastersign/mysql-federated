@@ -1,0 +1,51 @@
+# Expected secret variables
+# - REGISTRY: The fully qualified domain name of the private registry (HTTPS)
+# - REGISTRY_USER: The login user for the private registry
+# - REGISTRY_PASSWD: The login password for the private registry
+
+variables:
+  IMAGE_NAME: "$REGISTRY/mysql-federated"
+
+before_script:
+- echo $REGISTRY_PASSWD | docker login -u $REGISTRY_USER --password-stdin $REGISTRY
+
+stages:
+- build
+- publish
+- deploy
+
+build:image:
+  stage: build
+  except:
+  - tags
+  tags:
+  - docker
+  script:
+  - docker build --pull -t $IMAGE_NAME:dev .
+  - docker run --rm -ti $IMAGE_NAME:dev -v
+
+publish:image:
+  stage: publish
+  only:
+  - tags
+  tags:
+  - docker
+  script:
+  - docker build --pull -t $IMAGE_NAME:dev .
+  - docker run --rm -ti $IMAGE_NAME:dev -v
+  - docker tag $IMAGE_NAME:dev $IMAGE_NAME:$CI_COMMIT_REF_NAME
+  - docker push $IMAGE_NAME:$CI_COMMIT_REF_NAME
+  - docker rmi $IMAGE_NAME:$CI_COMMIT_REF_NAME
+
+deploy:image:
+  stage: deploy
+  only:
+  - tags
+  when: manual
+  tags:
+  - docker
+  script:
+  - docker pull $IMAGE_NAME:$CI_COMMIT_REF_NAME
+  - docker tag $IMAGE_NAME:$CI_COMMIT_REF_NAME $IMAGE_NAME:latest
+  - docker rmi $IMAGE_NAME:$CI_COMMIT_REF_NAME
+  - docker push $IMAGE_NAME:latest
