@@ -211,7 +211,9 @@ def run():
 
     remote_conn = connect(config, args.remote)
     try:
-        remote_tables = get_tables(remote_conn)
+        remote_tables = list(filter(
+            lambda t: t['table_schema'] == config.str(remote_cfg_group, 'schema'),
+            get_tables(remote_conn)))
         selected_tables = filter_tables(
             remote_tables,
             includes=config.str_list(link_cfg_group, 'include'),
