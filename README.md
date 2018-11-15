@@ -10,6 +10,18 @@ For the `config.ini` see section _Example Configuration_.
 link_mysql_database.py -c config.ini b a
 ~~~
 
+## Docker Usage
+This tool is published as a Docker container as `mastersign/mysql-federated`.
+To run `link_mysql_database` in a Docker container use the following command.
+For the `config.ini` see section _Example Configuration_.
+
+~~~sh
+docker run --rm -ti \
+    -v $(pwd)/config.ini:/app/config.ini \
+    mastersign/mysql-federated \
+    b a
+~~~
+
 ## Example Configuration
 
 The configuration contains the connection information for the servers
