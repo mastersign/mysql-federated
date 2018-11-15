@@ -39,7 +39,7 @@ A link section supports the following fields:
 * `drop_schema`: A yes/no flag for dropping the target schema before recreating it
   and the federated tables in it
 
-`config.ini`
+Example for `config.ini`:
 
 ~~~ini
 [database.a]
@@ -91,4 +91,5 @@ optional arguments:
 ## License
 
 This project is published under the BSD-3-Clause license.
+
 Copyright &copy; 2018 Tobias Kiertscher <dev@mastersign.de>.
