@@ -8,7 +8,7 @@ import fnmatch
 import pymysql.cursors
 
 
-__version__ = '0.1.1'
+__version__ = '0.1.2'
 
 
 def _option(v):
