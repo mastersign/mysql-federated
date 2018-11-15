@@ -23,6 +23,7 @@ build:image:
   script:
   - docker build --pull -t $IMAGE_NAME:dev .
   - docker run --rm -i $IMAGE_NAME:dev -v
+  - docker rmi $IMAGE_NAME:dev
 
 publish:image:
   stage: publish
@@ -33,19 +34,6 @@ publish:image:
   script:
   - docker build --pull -t $IMAGE_NAME:dev .
   - docker run --rm -i $IMAGE_NAME:dev -v
-  - docker tag $IMAGE_NAME:dev $IMAGE_NAME:$CI_COMMIT_REF_NAME
-  - docker push $IMAGE_NAME:$CI_COMMIT_REF_NAME
-  - docker rmi $IMAGE_NAME:$CI_COMMIT_REF_NAME
-
-deploy:image:
-  stage: deploy
-  only:
-  - tags
-  when: manual
-  tags:
-  - docker
-  script:
-  - docker pull $IMAGE_NAME:$CI_COMMIT_REF_NAME
-  - docker tag $IMAGE_NAME:$CI_COMMIT_REF_NAME $IMAGE_NAME:latest
-  - docker rmi $IMAGE_NAME:$CI_COMMIT_REF_NAME
+  - docker tag $IMAGE_NAME:dev $IMAGE_NAME:latest
   - docker push $IMAGE_NAME:latest
+  - docker rmi $IMAGE_NAME:dev
