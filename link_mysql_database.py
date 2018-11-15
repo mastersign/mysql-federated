@@ -197,7 +197,6 @@ def create_federated_table(conn, create_stmt, table_name, table_schema, server_n
 def run():
     args = parse_args()
     config = Configuration.load(args)
-    target_cfg_group = 'database.' + args.target
     remote_cfg_group = 'database.' + args.remote
     link_cfg_group = 'link.' + args.target + '.' + args.remote
 
@@ -206,7 +205,7 @@ def run():
     if not remote_schema:
         raise Exception('No remote schema specified.')
     target_schema = config.str(link_cfg_group, 'target_schema') or config.str(
-        target_cfg_group, 'schema')
+        remote_cfg_group, 'schema')
     if not target_schema:
         raise Exception('No target schema specified.')
 
