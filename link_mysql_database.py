@@ -8,7 +8,7 @@ import fnmatch
 import pymysql.cursors
 
 
-__version__ = '0.1.0'
+__version__ = '0.1.1'
 
 
 def _option(v):
@@ -29,16 +29,16 @@ class Configuration(object):
         self.data = config_data
 
     def bool(self, section, name):
-        return self.data[section].getboolean(name)
+        return self.data[section].getboolean(name) if section in self.data else None
 
     def int(self, section, name):
-        return self.data[section].getint(name)
+        return self.data[section].getint(name) if section in self.data else None
 
     def float(self, section, name):
-        return self.data[section].getfloat(name)
+        return self.data[section].getfloat(name) if section in self.data else None
 
     def str(self, section, name):
-        return self.data[section].get(name)
+        return self.data[section].get(name) if section in self.data else None
 
     def str_list(self, section, name):
         lst = self.str(section, name)
