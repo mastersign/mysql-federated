@@ -28,7 +28,7 @@ RUN install_clean \
 # COPY requirements.txt /app/requirements.txt
 # RUN pip install --user -r /app/requirements.txt
 
-COPY link_mysql_database.py /app/link_mysql_database.py
+COPY *.py /app/
 RUN touch /app/config.ini
 
 # Set working directory
@@ -36,4 +36,7 @@ WORKDIR /app
 
 # Setup image start
 # ENTRYPOINT ["/sbin/my_init"]
-ENTRYPOINT ["/usr/local/bin/python3", "/app/link_mysql_database.py", "-c", "/app/config.ini"]
+ENTRYPOINT ["/usr/bin/python3", "/app/link_mysql_database.py", "-c", "/app/config.ini"]
+
+# Add labels to the image
+LABEL org.label-schema.vcs-url="https://github.com/mastersign/mysql-federated"
