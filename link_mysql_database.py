@@ -1,106 +1,13 @@
 #!/usr/bin/env python3
 # _*_ coding: utf-8 _*_
 
-import os
-import configparser
 import argparse
 import fnmatch
-import pymysql.cursors
+from mastersign_config import Configuration
+from mastersign_mysql import connect, split_host
 
 
-__version__ = '0.1.3'
-
-
-def _option(v):
-    if '=' not in v:
-        raise argparse.ArgumentTypeError(
-            '"{}" is not a valid configuration option.'.format(v))
-    key, value = v.split('=', 1)
-    if '.' not in key:
-        raise argparse.ArgumentTypeError(
-            'The key of the configuration option "{}" is invalid.'.format(v))
-    section, name = key.split('.', 1)
-    return section, name, value
-
-
-class Configuration(object):
-
-    def __init__(self, config_data):
-        self.data = config_data
-
-    def bool(self, section, name):
-        return self.data[section].getboolean(name) if section in self.data else None
-
-    def int(self, section, name):
-        return self.data[section].getint(name) if section in self.data else None
-
-    def float(self, section, name):
-        return self.data[section].getfloat(name) if section in self.data else None
-
-    def str(self, section, name):
-        return self.data[section].get(name) if section in self.data else None
-
-    def str_list(self, section, name):
-        lst = self.str(section, name)
-        return list(map(lambda v: v.strip(), lst.split(','))) if lst is not None else []
-
-    @staticmethod
-    def load(args, default_config_file=None):
-        p = configparser.ConfigParser()
-        if default_config_file and os.path.exists(default_config_file):
-            p.read(default_config_file, encoding='utf-8')
-        if args.config_files:
-            p.read(args.config_files, encoding='utf-8')
-        if args.options:
-            for section, name, value in args.options:
-                p.set(section, name, value)
-        return Configuration(p)
-
-    @staticmethod
-    def add_config_arguments(parser):
-        parser.add_argument('-c', '--config-file', dest='config_files', action='append', required=False,
-                            help='A path to a configuration file in UTF-8 encoded INI format. '
-                            'This argument can be used multiple times.')
-        parser.add_argument('-o', '--options', nargs='+', type=_option, required=False,
-                            help='One or more configuration options, given in the format <section>.<option>=<value>.')
-
-
-def parse_args():
-    parser = argparse.ArgumentParser(
-        description='Link a database from one server to another, '
-        'by creating federated tables.')
-    parser.add_argument('-v', '--version', action='version', version=__version__,
-                        help='print the program version and exit')
-    parser.add_argument('target',
-                        help='The name of the target database in the configuration. '
-                        'This is the database to create the federated tables in.')
-    parser.add_argument('remote',
-                        help='The name of the remote database in the configuration. '
-                        'This is the existing database, which actually stores the data.')
-
-    Configuration.add_config_arguments(parser)
-    return parser.parse_args()
-
-
-def split_host(host):
-    port = 3306
-    host = host.split(':', 1)
-    if len(host) == 2:
-        host, port = host
-    else:
-        host = host[0]
-    return host, int(port)
-
-
-def connect(cfg, host_cfg_name):
-    host, port = split_host(cfg.str('database.' + host_cfg_name, 'host'))
-    return pymysql.connect(
-        host=host,
-        port=port,
-        user=cfg.str('database.' + host_cfg_name, 'user') or 'root',
-        password=cfg.str('database.' + host_cfg_name, 'password'),
-        charset='utf8mb4',
-        cursorclass=pymysql.cursors.DictCursor)
+__version__ = '0.1.4'
 
 
 def get_schemas(conn):
@@ -192,6 +99,23 @@ def create_federated_table(conn, create_stmt, table_name, table_schema, server_n
     with conn.cursor() as cur:
         cur.execute('USE `{}`'.format(table_schema))
         cur.execute(stmt)
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(
+        description='Link a database from one server to another, '
+        'by creating federated tables.')
+    parser.add_argument('-v', '--version', action='version', version=__version__,
+                        help='print the program version and exit')
+    parser.add_argument('target',
+                        help='The name of the target database in the configuration. '
+                        'This is the database to create the federated tables in.')
+    parser.add_argument('remote',
+                        help='The name of the remote database in the configuration. '
+                        'This is the existing database, which actually stores the data.')
+
+    Configuration.add_config_arguments(parser)
+    return parser.parse_args()
 
 
 def run():
