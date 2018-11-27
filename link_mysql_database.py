@@ -7,7 +7,7 @@ from mastersign_config import Configuration
 from mastersign_mysql import connect, split_host
 
 
-__version__ = '0.1.4'
+__version__ = '0.1.5'
 
 
 def get_schemas(conn):
