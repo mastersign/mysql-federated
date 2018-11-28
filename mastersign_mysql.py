@@ -44,7 +44,7 @@ def write_client_config(cfg, host_cfg_name, file):
 
 def execute_sql_file(cfg, host_cfg_name, script_file,
                      log=sys.stdout, logerr=sys.stderr,
-                     client_command='mysql', default_charset='utf8mb4'):
+                     client_command='mysql', use_database=True, default_charset='utf8mb4'):
     close_log = False
     if isinstance(log, str):
         log = open(log, 'a')
@@ -60,13 +60,16 @@ def execute_sql_file(cfg, host_cfg_name, script_file,
     finally:
         os.close(cfd)
     write_client_config(cfg, host_cfg_name, tmp_file)
+    args = [
+        client_command,
+        '--defaults-extra-file=' + tmp_file,
+        '--default-character-set=' + default_charset,
+    ]
+    if use_database:
+        args.append(cfg.str('database.' + host_cfg_name, 'schema'))
     try:
         with open(script_file, 'br') as sfd:
-            proc = subprocess.run([
-                client_command,
-                '--defaults-extra-file=' + tmp_file,
-                '--default-character-set=' + default_charset,
-            ], stdin=sfd, stdout=log, stderr=logerr)
+            proc = subprocess.run(args, stdin=sfd, stdout=log, stderr=logerr)
     finally:
         if close_log:
             log.close()
@@ -82,7 +85,7 @@ def execute_sql_file(cfg, host_cfg_name, script_file,
 
 def execute_sql(cfg, host_cfg_name, sql,
                 log=sys.stdout, logerr=sys.stderr,
-                client_command='mysql', default_charset='utf8mb4'):
+                client_command='mysql', use_database=True, default_charset='utf8mb4'):
     close_log = False
     if isinstance(log, str):
         log = open(log, 'a')
@@ -98,12 +101,15 @@ def execute_sql(cfg, host_cfg_name, sql,
     finally:
         os.close(cfd)
     write_client_config(cfg, host_cfg_name, tmp_file)
+    args = [
+        client_command,
+        '--defaults-extra-file=' + tmp_file,
+        '--default-character-set=' + default_charset,
+    ]
+    if use_database:
+        args.append(cfg.str('database.' + host_cfg_name, 'schema'))
     try:
-        proc = subprocess.run([
-            client_command,
-            '--defaults-extra-file=' + tmp_file,
-            '--default-character-set=' + default_charset,
-        ], input=sql, stdout=log, stderr=logerr)
+        proc = subprocess.run(args, input=sql, stdout=log, stderr=logerr)
     finally:
         if close_log:
             log.close()
