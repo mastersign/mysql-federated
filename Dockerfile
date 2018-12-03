@@ -39,4 +39,6 @@ WORKDIR /app
 ENTRYPOINT ["/usr/bin/python3", "/app/link_mysql_database.py", "-c", "/app/config.ini"]
 
 # Add labels to the image
-LABEL org.label-schema.vcs-url="https://github.com/mastersign/mysql-federated"
+LABEL org.opencontainers.image.title="Mastersign MySQL Federated"
+LABEL org.opencontainers.image.source="https://github.com/mastersign/mysql-federated"
+LABEL org.opencontainers.image.documentation="https://github.com/mastersign/mysql-federated/blob/master/README.md"
