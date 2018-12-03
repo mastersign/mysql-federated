@@ -1,6 +1,6 @@
 # MySQL Federated
 
-> Mirror tables from one MySQL server as federated tables into another MySQL server.
+> Link tables from one MySQL server as federated tables into another MySQL server.
 
 ## Usage
 Create federated tables on server _b_, which point to the data on server _a_.
