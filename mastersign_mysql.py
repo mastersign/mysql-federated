@@ -9,6 +9,7 @@ while loading the connection informations from a
 import sys
 import os
 import subprocess
+import re
 import tempfile
 import pymysql.cursors
 
@@ -100,7 +101,8 @@ def _execute_sql_script(cfg, host_cfg_name,
                 proc = subprocess.run(args, stdin=sfd,
                                       stdout=s_std.file, stderr=s_err.file)
         else:
-            proc = subprocess.run(args, input=script_text,
+            script_data = bytearray(script_text, 'utf-8')
+            proc = subprocess.run(args, input=script_data,
                                         stdout=s_std.file, stderr=s_err.file)
         return proc.returncode == 0 if proc else False
 
@@ -127,18 +129,28 @@ def execute_sql(cfg, host_cfg_name, sql,
                      default_charset=default_charset)
 
 
+def _get_mysqldump_version(command):
+    version_text = subprocess.check_output((command, '--version'), timeout=10, encoding='utf-8')
+    m8 = re.search(r"Ver (8\.[\d\.]+)", version_text)
+    if m8:
+        return m8[1]
+    m5 = re.search(r"Distrib (5\.[\d\.]+)", version_text)
+    if m5:
+        return m5[1]
+    return None
+
+
 def mirror(cfg, src_cfg_name, trg_cfg_name,
            src_schema, trg_schema, table_name=None,
            export_command='mysqldump', import_command='mysql',
-           drop_db=False, create_db=True, drop_table=False,
-           add_locks=True, quick=True,
+           drop_table=True,
+           add_locks=True, quick=True, single_transaction=True,
            buffer_length=1048576,
            log=sys.stdout, logerr=sys.stderr):
     with OutputStream(log) as s_std, \
          OutputStream(logerr) as s_err, \
          TempFile() as src_cfg_file, \
          TempFile() as trg_cfg_file:
-
 
         write_client_config(cfg, src_cfg_name, src_cfg_file.path)
         write_client_config(cfg, trg_cfg_name, trg_cfg_file.path)
@@ -148,10 +160,9 @@ def mirror(cfg, src_cfg_name, trg_cfg_name,
             '--default-character-set=utf8mb4',
             '--net_buffer_length=' + str(buffer_length),
         ]
-        if drop_db:
-            export_args.append('--add-drop-database')
-        if not create_db:
-            export_args.append('--no-create-db')
+        mysqldump_version = _get_mysqldump_version(export_command)
+        if mysqldump_version and mysqldump_version[:2] == '8.':
+            export_args.append('--column-statistics=0')
         if drop_table:
             export_args.append('--add-drop-table')
         else:
@@ -164,15 +175,21 @@ def mirror(cfg, src_cfg_name, trg_cfg_name,
             export_args.append('--quick')
         else:
             export_args.append('--skip-quick')
-        export_args.append(src_schema)
+        if single_transaction:
+            export_args.append('--skip-lock-tables')
+            export_args.append('--single-transaction')
         if table_name:
+            export_args.append(src_schema)
             export_args.append(table_name)
+        else:
+            export_args.append(src_schema)
         import_args = [
             import_command,
             '--defaults-extra-file=' + trg_cfg_file.path,
             '--default-character-set=utf8mb4',
             trg_schema,
         ]
+
         export_proc = subprocess.Popen(export_args, stdout=subprocess.PIPE)
         import_proc = subprocess.Popen(import_args, stdin=export_proc.stdout,
                                        stdout=s_std.file, stderr=s_err.file)
